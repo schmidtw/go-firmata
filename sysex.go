@@ -1,11 +1,11 @@
 // Copyright 2014 Krishna Raman
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,15 +23,15 @@ func (c *FirmataClient) parseSysEx(data []byte) {
 	var cmd SysExCommand
 
 	cmd = SysExCommand(data[0])
-  c.Log.Trace("Processing sysex %v\n", cmd)
+	c.Log.Trace("Processing sysex %v\n", cmd)
 	data = data[1:]
-	
+
 	bStr := ""
 	for _, b := range data {
 		bStr = bStr + fmt.Sprintf(" %#2x", b)
 	}
-  c.Log.Trace("SysEx recv %v\n", bStr)
-	
+	c.Log.Trace("SysEx recv %v\n", bStr)
+
 	switch {
 	case cmd == StringData:
 		c.Log.Info("String data: %v", string(data))
@@ -55,7 +55,7 @@ func (c *FirmataClient) parseSysEx(data []byte) {
 			c.pinModes = append(c.pinModes, pinModes)
 			pin = pin + 1
 		}
-    c.Log.Debug("Total pins: %v\n", pin-1)
+		c.Log.Debug("Total pins: %v\n", pin-1)
 		c.capabilityDone = true
 	case cmd == AnalogMappingResponse:
 		c.analogPinsChannelMap = make(map[int]byte)
