@@ -66,22 +66,20 @@ func (v FirmataValue) String() string {
 }
 
 func (c *FirmataClient) replyReader() {
-	r := bufio.NewReader(*c.conn)
+	r := bufio.NewReader(c.conn)
 	c.valueChan = make(chan FirmataValue)
 	var init bool
 
 	for {
 		b, err := (r.ReadByte())
 		if err != nil {
-			c.Log.Critical(err)
 			return
 		}
 
 		cmd := FirmataCommand(b)
-		c.Log.Trace("Incoming cmd %v", cmd)
 		if !init {
 			if cmd != ReportVersion {
-				c.Log.Debug("Discarding unexpected command byte %0d (not initialized)\n", b)
+				// Discarding unexpected command byte (not initialized)
 				continue
 			} else {
 				init = true
@@ -93,7 +91,6 @@ func (c *FirmataClient) replyReader() {
 			c.protocolVersion = make([]byte, 2)
 			c.protocolVersion[0], err = r.ReadByte()
 			c.protocolVersion[1], err = r.ReadByte()
-			c.Log.Info("Protocol version: %d.%d", c.protocolVersion[0], c.protocolVersion[1])
 		case cmd == StartSysEx:
 			var sysExData []byte
 			sysExData, err = r.ReadSlice(byte(EndSysEx))
@@ -107,10 +104,9 @@ func (c *FirmataClient) replyReader() {
 			case c.valueChan <- FirmataValue{cmd, int(from7Bit(b1, b2)), c.analogChannelPinsMap}:
 			}
 		default:
-			c.Log.Debug("Discarding unexpected command byte %0d\n", b)
+			// Discarding unexpected command byte
 		}
 		if err != nil {
-			c.Log.Critical(err)
 			return
 		}
 	}

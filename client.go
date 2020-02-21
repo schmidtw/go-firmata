@@ -15,9 +15,6 @@
 package firmata
 
 import (
-	"code.google.com/p/log4go"
-	"github.com/tarm/goserial"
-
 	"fmt"
 	"io"
 	"time"
@@ -25,10 +22,7 @@ import (
 
 // Arduino Firmata client for golang
 type FirmataClient struct {
-	serialDev string
-	baud      int
-	conn      *io.ReadWriteCloser
-	Log       *log4go.Logger
+	conn io.ReadWriteCloser
 
 	protocolVersion []byte
 	firmwareVersion []int
@@ -52,23 +46,9 @@ type FirmataClient struct {
 // Creates a new FirmataClient object and connects to the Arduino board
 // over specified serial port. This function blocks till a connection is
 // succesfullt established and pin mappings are retrieved.
-func NewClient(dev string, baud int) (client *FirmataClient, err error) {
-	var conn io.ReadWriteCloser
-
-	c := &serial.Config{Name: dev, Baud: baud}
-	conn, err = serial.OpenPort(c)
-	if err != nil {
-		client.Log.Critical(err)
-		return
-	}
-
-	logger := make(log4go.Logger)
-	logger.AddFilter("stdout", log4go.INFO, log4go.NewConsoleLogWriter())
+func NewClient(conn io.ReadWriteCloser) (client *FirmataClient, err error) {
 	client = &FirmataClient{
-		serialDev: dev,
-		baud:      baud,
-		conn:      &conn,
-		Log:       &logger,
+		conn: conn,
 	}
 	go client.replyReader()
 
@@ -80,16 +60,14 @@ func NewClient(dev string, baud int) (client *FirmataClient, err error) {
 		case <-t.C:
 			//no-op
 		case <-time.After(time.Second * 15):
-			client.Log.Critical("No response in 30 seconds. Resetting arduino")
+			// No response in 30 seconds. Resetting arduino
 			conn.Write([]byte{byte(SystemReset)})
 		case <-time.After(time.Second * 30):
-			client.Log.Critical("Unable to initialize connection")
+			// Unable to initialize connection
 			conn.Close()
 			client = nil
 		}
 	}
-
-	client.Log.Info("Client ready to use")
 
 	return
 }
@@ -97,7 +75,7 @@ func NewClient(dev string, baud int) (client *FirmataClient, err error) {
 // Close the serial connection to properly clean up after ourselves
 // Usage: defer client.Close()
 func (c *FirmataClient) Close() {
-	(*c.conn).Close()
+	c.conn.Close()
 }
 
 // Sets the Pin mode (input, output, etc.) for the Arduino pin
@@ -162,7 +140,6 @@ func (c *FirmataClient) EnableAnalogInput(pin uint, val bool) (err error) {
 	}
 
 	ch := byte(c.analogPinsChannelMap[int(pin)])
-	c.Log.Debug("Enable analog inout on pin %v channel %v", pin, ch)
 	if val {
 		cmd := []byte{byte(EnableAnalogInput) | ch, 0x01}
 		err = c.sendCommand(cmd)
@@ -192,9 +169,8 @@ func (c *FirmataClient) sendCommand(cmd []byte) (err error) {
 	for _, b := range cmd {
 		bStr = bStr + fmt.Sprintf(" %#2x", b)
 	}
-	c.Log.Trace("Command send%v\n", bStr)
 
-	_, err = (*c.conn).Write(cmd)
+	_, err = c.conn.Write(cmd)
 	return
 }
 

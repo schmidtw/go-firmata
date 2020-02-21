@@ -45,6 +45,6 @@ func (c *FirmataClient) parseSerialResponse(data7bit []byte) {
 	select {
 	case c.serialChan <- string(data):
 	default:
-		c.Log.Critical("Serial data buffer overflow. No listener?")
+		// Serial data buffer overflow. No listener?
 	}
 }
